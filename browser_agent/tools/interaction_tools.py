@@ -1,73 +1,65 @@
-import asyncio
 from typing import Dict, Any, Optional
+from ..session import BrowserSessionManager
+
 
 class InteractionTools:
-    def click(self, element_ref: str) -> Dict[str, Any]:
-        \"\"\"
-        Clicks an interactive element identified by its reference index.
-        \"\"\"
-        # element = self.current_element_map.get(element_ref)
-        # if not element: raise Error("Invalid element reference")
-        # x, y = element.center_x, element.center_y
-        # get_active_page().mouse.click(x, y)
-        # handle_implicit_new_tabs()
+    def __init__(self, session: BrowserSessionManager):
+        self.session = session
+
+    def _get_element_selector(self, element_ref: int) -> str:
+        """Helper to get a CSS selector for an element by its data attribute assigned during observation."""
+        return f"[data-browser-agent-ref='{element_ref}']"
+
+    def click(self, element_ref: int) -> Dict[str, Any]:
+        """Clicks an interactive element identified by its reference index."""
+        page = self.session.get_active_page()
+        selector = self._get_element_selector(element_ref)
+        page.locator(selector).first.click(timeout=3000)
         return {"status": "success", "message": f"Clicked element {element_ref}"}
 
-    async def input(self, element_ref: str, text: str, clear: bool = True) -> Dict[str, Any]:
-        \"\"\"
-        Types text into a specific input field.
-        \"\"\"
-        # element = self.current_element_map.get(element_ref)
-        # locator = get_playwright_locator(element)
-        # if clear: locator.fill("")
-        # locator.type(text, delay=50)
-        # if element.is_combobox:
-        #     await asyncio.sleep(0.5)
-        return {"status": "success", "message": f"Typed '{text}' into {element_ref}"}
+    def input(self, element_ref: int, text: str, clear: bool = True) -> Dict[str, Any]:
+        """Types text into a specific input field."""
+        page = self.session.get_active_page()
+        selector = self._get_element_selector(element_ref)
+        locator = page.locator(selector).first
+        if clear:
+            locator.fill("")
+        locator.type(text, delay=50)
+        return {"status": "success", "message": f"Input '{text}' into element {element_ref}"}
 
     def send_keys(self, keys: str) -> Dict[str, Any]:
-        \"\"\"
-        Dispatches a raw keyboard event.
-        \"\"\"
-        # get_active_page().keyboard.press(keys)
-        return {"status": "success", "message": f"Pressed keys: {keys}"}
+        """Dispatches a raw keyboard event (e.g. Enter, Escape, Tab)."""
+        page = self.session.get_active_page()
+        page.keyboard.press(keys)
+        return {"status": "success", "message": f"Pressed {keys}"}
 
-    def scroll(self, direction: str, amount: float, element_ref: Optional[str] = None) -> Dict[str, Any]:
-        \"\"\"
-        Scrolls the window, or a specific scrollable element, up or down.
-        \"\"\"
-        # pixels = calculate_pixels(amount)
-        # if direction == "up": pixels = -pixels
-        # if element_ref:
-        #     element = self.current_element_map.get(element_ref)
-        #     get_active_page().evaluate(f"el => el.scrollBy(0, {pixels})", element)
-        # else:
-        #     get_active_page().evaluate(f"window.scrollBy(0, {pixels})")
-        return {"status": "success", "message": f"Scrolled {direction} by {amount}"}
+    def scroll(self, direction: str, amount: str = "page") -> Dict[str, Any]:
+        """Scrolls the active window."""
+        page = self.session.get_active_page()
+        pixels = 1000 if amount == "page" else 300
+        if direction.lower() == "up":
+            pixels = -pixels
+            
+        page.evaluate(f"window.scrollBy(0, {pixels})")
+        return {"status": "success", "message": f"Scrolled {direction}"}
 
-    def hover(self, element_ref: str) -> Dict[str, Any]:
-        \"\"\"
-        Moves the mouse cursor over an element to trigger CSS hovers or JS tooltips.
-        \"\"\"
-        # element = self.current_element_map.get(element_ref)
-        # get_active_page().mouse.move(element.center_x, element.center_y)
-        return {"status": "success", "message": f"Hovered over {element_ref}"}
-
-    def select_dropdown(self, element_ref: str, option_text: str) -> Dict[str, Any]:
-        \"\"\"
-        Selects a specific string option from a native HTML <select> element.
-        \"\"\"
-        # element = self.current_element_map.get(element_ref)
-        # locator = get_playwright_locator(element)
-        # locator.select_option(label=option_text)
+    def select_dropdown(self, element_ref: int, option_text: str) -> Dict[str, Any]:
+        """Selects a specific string option from a native HTML <select> element."""
+        page = self.session.get_active_page()
+        selector = self._get_element_selector(element_ref)
+        page.locator(selector).first.select_option(label=option_text, timeout=3000)
         return {"status": "success", "message": f"Selected '{option_text}' on {element_ref}"}
 
-    def upload_file(self, element_ref: str, path: str) -> Dict[str, Any]:
-        \"\"\"
-        Attaches a local file to an <input type="file">.
-        \"\"\"
-        # verify_path_is_safe(path)
-        # element = self.current_element_map.get(element_ref)
-        # locator = get_playwright_locator(element)
-        # locator.set_input_files(path)
-        return {"status": "success", "message": f"Uploaded '{path}' to {element_ref}"}
+    def hover(self, element_ref: int) -> Dict[str, Any]:
+        """Moves the mouse cursor over an element."""
+        page = self.session.get_active_page()
+        selector = self._get_element_selector(element_ref)
+        page.locator(selector).first.hover(timeout=3000)
+        return {"status": "success", "message": f"Hovered over {element_ref}"}
+
+    def upload_file(self, element_ref: int, file_path: str) -> Dict[str, Any]:
+        """Attaches a local file to a file input."""
+        page = self.session.get_active_page()
+        selector = self._get_element_selector(element_ref)
+        page.locator(selector).first.set_input_files(file_path, timeout=3000)
+        return {"status": "success", "message": f"Uploaded file to {element_ref}"}

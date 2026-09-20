@@ -3,47 +3,24 @@ from .core_tools import CoreTools
 from .interaction_tools import InteractionTools
 from .tab_tools import TabTools
 from .inspection_tools import InspectionTools
-from .escape_tools import EscapeTools
+from ..models import ToolCall, ToolResult, ExecutionError, ErrorType
+from ..session import BrowserSessionManager
 
-# Note: Assuming ToolCall, ToolResult, ExecutionError, ErrorType are available in models
-# For this scaffold, we'll mock them or import them if available
-try:
-    from ..models import ToolCall, ToolResult, ExecutionError, ErrorType
-except ImportError:
-    class ToolCall:
-        tool_name: str
-        arguments: dict
-
-    class ToolResult:
-        def __init__(self, success, output=None, error=None, execution_method=None):
-            self.success = success
-            self.output = output
-            self.error = error
-            self.execution_method = execution_method
-
-    class ExecutionError:
-        def __init__(self, type, message):
-            self.type = type
-            self.message = message
-            
-    class ErrorType:
-        VALIDATION_ERROR = "VALIDATION_ERROR"
-        SYSTEM_ERROR = "SYSTEM_ERROR"
 
 class BrowserToolRegistry:
-    def __init__(self):
-        self.core_tools = CoreTools()
-        self.interact_tools = InteractionTools()
-        self.tab_tools = TabTools()
-        self.inspect_tools = InspectionTools()
-        self.escape_tools = EscapeTools()
+    def __init__(self, session_manager: BrowserSessionManager):
+        self.session = session_manager
+        
+        self.core_tools = CoreTools(self.session)
+        self.interact_tools = InteractionTools(self.session)
+        self.tab_tools = TabTools(self.session)
+        self.inspect_tools = InspectionTools(self.session)
 
         self.tools: Dict[str, Callable] = {}
         self._register_tools(self.core_tools)
         self._register_tools(self.interact_tools)
         self._register_tools(self.tab_tools)
         self._register_tools(self.inspect_tools)
-        self._register_tools(self.escape_tools)
 
     def _register_tools(self, tool_group: Any):
         for attr_name in dir(tool_group):
