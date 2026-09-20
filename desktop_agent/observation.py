@@ -1,28 +1,7 @@
 from typing import Optional
 from .models import Observation, ObservationScope, DesktopAgentState, WindowRef, UIState
 
-
-class DesktopToolsFacade:
-    """
-    Mock/placeholder for the actual desktop tools capability layer.
-    In production, this would bridge to capabilities/desktop/.
-    """
-
-    @staticmethod
-    def list_all_windows():
-        return []
-
-    @staticmethod
-    def get_active_window_info():
-        return WindowRef(title="Desktop")
-
-    @staticmethod
-    def get_ui_tree():
-        return UIState(windows=[])
-
-    @staticmethod
-    def get_screenshot():
-        return "/tmp/screen.png"
+from .tools.observation_tools import ObservationTools
 
 
 class ObservationManager:
@@ -33,26 +12,28 @@ class ObservationManager:
     def acquire(
         self, scope: ObservationScope = ObservationScope.UI_TREE
     ) -> Observation:
+        obs_tools = ObservationTools()
+
         if scope == ObservationScope.WINDOW_LIST:
-            windows = DesktopToolsFacade.list_all_windows()
-            active = DesktopToolsFacade.get_active_window_info()
+            windows = obs_tools.list_all_windows()
+            active = obs_tools.get_active_window_info()
             return Observation(scope=scope, active_window=active, windows=windows)
 
         elif scope == ObservationScope.UI_TREE:
-            active = DesktopToolsFacade.get_active_window_info()
-            tree = DesktopToolsFacade.get_ui_tree()
+            active = obs_tools.get_active_window_info()
+            tree = obs_tools.get_ui_tree()
             return Observation(scope=scope, active_window=active, ui_tree=tree)
 
         elif scope == ObservationScope.SCREENSHOT:
-            active = DesktopToolsFacade.get_active_window_info()
-            path = DesktopToolsFacade.get_screenshot()
-            tree = DesktopToolsFacade.get_ui_tree()
+            active = obs_tools.get_active_window_info()
+            path = obs_tools.get_screenshot()
+            tree = obs_tools.get_ui_tree()
             return Observation(
                 scope=scope, active_window=active, ui_tree=tree, screenshot_path=path
             )
 
         else:  # FULL or others
-            active = DesktopToolsFacade.get_active_window_info()
+            active = obs_tools.get_active_window_info()
             return Observation(scope=scope, active_window=active)
 
     def refresh_if_stale(

@@ -6,17 +6,15 @@ from .llm import LLMEngine, LLMResponseType
 from .loop_guard import LoopGuard
 from .recovery import RecoveryManager
 from .planner import LocalPlanner
+from .tools.registry import ToolRegistry
 
 
 class ToolExecutor:
-    @staticmethod
-    def execute(tool_call: ToolCall) -> ToolResult:
-        # Mock tool executor bridging to Desktop Tools
-        return ToolResult(
-            success=True,
-            output="Executed successfully",
-            execution_method="MockExecutor",
-        )
+    registry = ToolRegistry()
+
+    @classmethod
+    def execute(cls, tool_call: ToolCall) -> ToolResult:
+        return cls.registry.execute(tool_call)
 
 
 class ExecutionController:
